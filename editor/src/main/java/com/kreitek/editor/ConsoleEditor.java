@@ -3,6 +3,8 @@ package com.kreitek.editor;
 import com.kreitek.editor.commands.CommandFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class ConsoleEditor implements Editor {
@@ -18,7 +20,7 @@ public class ConsoleEditor implements Editor {
 
     private final CommandFactory commandFactory = new CommandFactory();
     private ArrayList<String> documentLines = new ArrayList<String>();
-
+    MementoCaretaker caretaker = MementoCaretaker.getInstance();
     @Override
     public void run() {
         boolean exit = false;
@@ -27,6 +29,9 @@ public class ConsoleEditor implements Editor {
             try {
                 Command command = commandFactory.getCommand(commandLine);
                 command.execute(documentLines);
+                if (!command.getClass().getSimpleName().equals("UndoCommand")){
+                    caretaker.push(getSave());
+                }
             } catch (BadCommandException e) {
                 printErrorToConsole("Bad command");
             } catch (ExitException e) {
@@ -64,6 +69,14 @@ public class ConsoleEditor implements Editor {
         printLnToConsole("To add new line -> a \"your text\"");
         printLnToConsole("To update line  -> u [line number] \"your text\"");
         printLnToConsole("To delete line  -> d [line number]");
+        printLnToConsole("To undo line  -> undo");
+    }
+
+    private Memento getSave() {
+        Memento memento = MementoFactory.getMemento();
+        memento.setState(documentLines);
+        System.out.println(memento.getState());
+        return memento;
     }
 
     private void printErrorToConsole(String message) {
